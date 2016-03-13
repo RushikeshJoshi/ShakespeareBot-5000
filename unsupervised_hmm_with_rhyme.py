@@ -26,66 +26,68 @@ def parse_data(filename, num_poems=154):
             if title > num_poems:
                 break
 
+            skip = False
             # Exceptions
             if title == 99: # Sonnet 99 consists of 15 lines
-                continue
-                #limit = SONNET_LINE_COUNT + 1
+                limit = SONNET_LINE_COUNT + 1
+                skip = True
             if title == 126: # Sonnet 125 consists of 12 lines
-                #limit = SONNET_LINE_COUNT - 2
-                continue
+                limit = SONNET_LINE_COUNT - 2
+                skip = True
 
             poem = []
             while line_count < limit:
 
                 line = f.readline().rstrip().lstrip()
 
-                # Removed all punctuation for now
-                line = "".join(c for c in line if c not in string.punctuation)
+                if not skip:
+                    # Removed all punctuation for now
+                    line = "".join(c for c in line if c not in string.punctuation)
 
-                words = line.split(' ')
-                #words.append('\n') # Keep track of end of line
-                words = [w.lower() for w in words if w]
+                    words = line.split(' ')
+                    #words.append('\n') # Keep track of end of line
+                    words = [w.lower() for w in words if w]
 
-                obs += words
-                obs_seqs.append(words)
+                    obs += words
+                    obs_seqs.append(words)
+
+                    poem.append(words)
 
                 line_count += 1
-                poem.append(words)
+
             #obs_seqs.append(poem)
-            for a in range(0, int((limit - 2) / 4.0)):
-                idx = a * 4
-                #print idx
-                for i in range(idx, idx+2):
-                    print i+2
-                    word1 = poem[i][-1]
-                    word2 = poem[i+2][-1]
+            if not skip:
+               for a in range(0, int((limit - 2) / 4.0)):
+                   idx = a * 4
+                   #print idx
+                   for i in range(idx, idx+2):
+                       word1 = poem[i][-1]
+                       word2 = poem[i+2][-1]
 
-                    if rhyme_dict.get(word1):
-                        rhyme_dict[word1].append(word2)
-                    else:
-                       rhyme_dict[word1] = [word2]
+                       if rhyme_dict.get(word1):
+                           rhyme_dict[word1].append(word2)
+                       else:
+                          rhyme_dict[word1] = [word2]
 
-                    if rhyme_dict.get(word2):
-                        rhyme_dict[word1].append(word1)
-                    else:
-                       rhyme_dict[word2] = [word1]
+                       if rhyme_dict.get(word2):
+                           rhyme_dict[word1].append(word1)
+                       else:
+                          rhyme_dict[word2] = [word1]
 
-            word1 = poem[12][-1]
-            word2 = poem[13][-1]
+               word1 = poem[12][-1]
+               word2 = poem[13][-1]
 
-            if rhyme_dict.get(word1):
-                rhyme_dict[word1].append(word2)
-            else:
-               rhyme_dict[word1] = [word2]
+               if rhyme_dict.get(word1):
+                   rhyme_dict[word1].append(word2)
+               else:
+                  rhyme_dict[word1] = [word2]
 
-            if rhyme_dict.get(word2):
-                rhyme_dict[word1].append(word1)
-            else:
-               rhyme_dict[word2] = [word1]
+               if rhyme_dict.get(word2):
+                   rhyme_dict[word1].append(word1)
+               else:
+                  rhyme_dict[word2] = [word1]
 
-            print rhyme_dict
-            poem = []
-
+               poem = []
             line = f.readline() # Skip Sonnet End
 
     obs = list(set(obs))
@@ -95,7 +97,7 @@ def parse_data(filename, num_poems=154):
 
 def main():
     num_states = 10
-    (obs_seqs, obs_map, rhyme_dict) = parse_data(filename, num_poems=4)
+    (obs_seqs, obs_map, rhyme_dict) = parse_data(filename, num_poems=154)
 
     A, O = baum_welch(num_states, len(obs), [[obs_map[a] for a in obs_seq] for obs_seq in obs_seqs])
 
@@ -279,7 +281,7 @@ def fb_alg(A_mat, O_mat, observ):
     prob_mat = np.array(fw)*np.array(bw)
     return prob_mat, fw, bw
 
-def baum_welch( num_states, num_obs, observ_seqs, convergence=.001 ):
+def baum_welch( num_states, num_obs, observ_seqs, convergence=.01 ):
     #A_mat = np.ones((num_states, num_states))
     A_mat = np.random.uniform(size=(num_states, num_states))
     A_mat = A_mat / np.sum(A_mat,1)[:, np.newaxis] # Normalize
